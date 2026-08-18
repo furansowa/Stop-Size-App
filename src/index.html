@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Stop Size Widget</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div id="stage">
+      <div id="canvas">
+        <img id="bg" src="assets/background.png" alt="" draggable="false" />
+
+        <div id="chrome">
+          <button id="pin-btn" class="chrome-btn" title="Always on top" aria-label="Toggle always on top">
+            <svg viewBox="0 0 24 24"><path d="M16 3l5 5-1.5 1.5L18 8l-4 4 1 5-1.5 1.5L10 15l-5 5-1-1 5-5-3.5-3.5L7 9l5 1 4-4-1.5-1.5L16 3z"/></svg>
+          </button>
+          <button id="settings-btn" class="chrome-btn" title="Settings" aria-label="Open settings">
+            <svg viewBox="0 0 24 24"><path d="M19.14 12.94a7.14 7.14 0 000-1.88l2.03-1.58a.5.5 0 00.12-.64l-1.92-3.32a.5.5 0 00-.6-.22l-2.39.96a7.3 7.3 0 00-1.63-.94l-.36-2.54a.5.5 0 00-.5-.42h-3.84a.5.5 0 00-.5.42l-.36 2.54c-.59.24-1.14.56-1.63.94l-2.39-.96a.5.5 0 00-.6.22L2.7 8.84a.5.5 0 00.12.64l2.03 1.58a7.14 7.14 0 000 1.88L2.82 14.5a.5.5 0 00-.12.64l1.92 3.32c.14.24.42.32.66.22l2.39-.96c.49.38 1.04.7 1.63.94l.36 2.54c.05.24.26.42.5.42h3.84c.24 0 .45-.18.5-.42l.36-2.54c.59-.24 1.14-.56 1.63-.94l2.39.96c.24.1.52.02.66-.22l1.92-3.32a.5.5 0 00-.12-.64l-2.03-1.58zM12 15.5a3.5 3.5 0 110-7 3.5 3.5 0 010 7z"/></svg>
+          </button>
+          <button id="close-btn" class="chrome-btn" title="Close to tray" aria-label="Close to tray">
+            <svg viewBox="0 0 24 24"><path d="M18.3 5.71L12 12.01l6.3 6.3-1.42 1.41L10.59 13.4l-6.3 6.3-1.41-1.4 6.3-6.3-6.3-6.3L4.29 4.3l6.3 6.3 6.3-6.3z"/></svg>
+          </button>
+        </div>
+
+        <div id="table">
+          <div class="group" id="group-left"></div>
+          <div class="group" id="group-right"></div>
+        </div>
+
+        <div id="status"></div>
+      </div>
+    </div>
+
+    <div id="settings-overlay" class="hidden">
+      <div id="settings-panel">
+        <div class="settings-header">
+          <h2>Settings</h2>
+          <button id="settings-close" aria-label="Close settings">&times;</button>
+        </div>
+        <div class="settings-body">
+          <section>
+            <h3>Risk</h3>
+            <label>Risk % per trade
+              <input id="risk-input" type="number" step="0.01" min="0" />
+            </label>
+          </section>
+
+          <section>
+            <h3>Stop range</h3>
+            <div class="inline-fields">
+              <label>Min <input id="stop-min" type="number" step="1" /></label>
+              <label>Max <input id="stop-max" type="number" step="1" /></label>
+              <label>Step <input id="stop-step" type="number" step="1" min="1" /></label>
+            </div>
+          </section>
+
+          <section>
+            <h3>Exchange rates</h3>
+            <div class="rate-row">
+              <label>EUR/USD <input id="eurusd-rate" type="number" step="0.0001" /></label>
+              <label class="checkbox"><input id="eurusd-auto" type="checkbox" /> Auto</label>
+              <button id="eurusd-fetch-now" type="button">Fetch</button>
+              <span class="hint">updated <span id="eurusd-last-updated"></span></span>
+            </div>
+            <div class="rate-row">
+              <label>USD/JPY <input id="usdjpy-rate" type="number" step="0.01" /></label>
+              <label class="checkbox"><input id="usdjpy-auto" type="checkbox" /> Auto</label>
+              <button id="usdjpy-fetch-now" type="button">Fetch</button>
+              <span class="hint">updated <span id="usdjpy-last-updated"></span></span>
+            </div>
+          </section>
+
+          <section id="accounts-section">
+            <h3>
+              Accounts
+              <span id="account-count" class="hint"></span>
+            </h3>
+            <div id="accounts-list"></div>
+            <button id="account-add" type="button" class="secondary-btn">+ Add account</button>
+          </section>
+
+          <section>
+            <label class="checkbox"><input id="always-on-top-input" type="checkbox" /> Always on top</label>
+          </section>
+        </div>
+        <div class="settings-footer">
+          <button id="settings-save">Save</button>
+        </div>
+      </div>
+    </div>
+
+    <template id="account-row-template">
+      <div class="account-row">
+        <div class="account-row-head">
+          <span class="acc-tag"></span>
+          <button class="acc-remove" type="button" title="Remove account" aria-label="Remove account">&times;</button>
+        </div>
+        <div class="account-row-fields">
+          <label>Name (private) <input class="acc-label" type="text" placeholder="not displayed" /></label>
+          <label>Balance <input class="acc-amount" type="number" step="1" /></label>
+          <label>Currency
+            <select class="acc-currency">
+              <option value="USD">USD</option>
+              <option value="EUR">EUR</option>
+              <option value="JPY">JPY</option>
+            </select>
+          </label>
+          <label>Instrument
+            <select class="acc-instrument">
+              <option value="EUR/USD">EUR/USD</option>
+              <option value="USD/JPY">USD/JPY</option>
+            </select>
+          </label>
+          <label>Sizing
+            <select class="acc-type">
+              <option value="contracts">contracts</option>
+              <option value="lots">lots</option>
+            </select>
+          </label>
+          <label>Max lot <input class="acc-maxlot" type="number" step="0.01" placeholder="none" /></label>
+        </div>
+      </div>
+    </template>
+
+    <script type="module" src="main.js"></script>
+  </body>
+</html>

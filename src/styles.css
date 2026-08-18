@@ -1,0 +1,463 @@
+/* ---------------------------------------------------------------------------
+   Fonts
+
+   Oswald (SIL OFL) is the only family, bundled locally rather than pulled from
+   a CDN so the widget renders identically offline. It carries everything: the
+   stop column, the headers, every account column and the settings panel.
+--------------------------------------------------------------------------- */
+
+@font-face {
+  font-family: "Oswald";
+  src: url("assets/fonts/Oswald-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+}
+@font-face {
+  font-family: "Oswald";
+  src: url("assets/fonts/Oswald-Bold.ttf") format("truetype");
+  font-weight: 700;
+  font-style: normal;
+}
+
+:root {
+  --gold: #f0c25e;
+  --white-glow: #ffffff;
+  /* Pale accent for the every-10 stop marker: a soft tint of the plain white
+     stop digit, not a second alarm colour competing with the gold. */
+  --pink: #ffb3d4;
+  --pink-stroke: #a84a76;
+  --pink-deep: #70294d;
+  /* Kept strong — this one is a destructive-action warning, not decoration. */
+  --warn: #ff4fa0;
+
+  --design-w: 1500;
+  --design-h: 1051;
+
+  --ui-font: "Oswald", sans-serif;
+
+  /* Overwritten from JS by applyLayout() once the account count is known. */
+  --cols: 4;
+  --group-w: 660px;
+  --group-left: 40px;
+  --group-right: 800px;
+  --font-scale: 1;
+  --header-h: 96px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: transparent;
+  -webkit-font-smoothing: antialiased;
+}
+
+#stage {
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  position: relative;
+}
+
+#canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: calc(var(--design-w) * 1px);
+  height: calc(var(--design-h) * 1px);
+  transform-origin: top left;
+  user-select: none;
+}
+
+#bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  -webkit-user-drag: none;
+  pointer-events: none;
+}
+
+/* ---------- Window chrome ---------- */
+
+#chrome {
+  position: absolute;
+  top: 8px;
+  right: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  z-index: 10;
+}
+
+.chrome-btn {
+  width: 26px;
+  height: 26px;
+  padding: 5px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(20, 20, 30, 0.45);
+  color: rgba(255, 255, 255, 0.75);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, color 0.15s;
+}
+
+.chrome-btn:hover,
+.chrome-btn.active {
+  background: rgba(240, 194, 94, 0.85);
+  color: #1a1a1a;
+}
+
+.chrome-btn svg {
+  width: 100%;
+  height: 100%;
+  fill: currentColor;
+}
+
+/* ---------- Table ---------- */
+
+#table {
+  position: absolute;
+  top: 20px;
+  left: 0;
+  width: 100%;
+  height: calc(100% - 76px);
+}
+
+.group {
+  position: absolute;
+  top: 0;
+  width: var(--group-w);
+  height: 100%;
+  display: grid;
+  grid-template-columns: repeat(var(--cols), 1fr);
+  grid-template-rows: var(--header-h) repeat(12, 1fr);
+  align-items: center;
+}
+
+#group-left {
+  left: var(--group-left);
+}
+
+#group-right {
+  left: var(--group-right);
+}
+
+.cell {
+  text-align: center;
+  white-space: nowrap;
+}
+
+.header-cell {
+  font-family: var(--ui-font);
+  font-weight: 700;
+  font-size: calc(30px * var(--font-scale));
+  letter-spacing: 1px;
+  color: #f5efe0;
+}
+
+.header-stopsize {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1.05;
+  gap: 2px;
+}
+
+.header-stopsize span {
+  color: #ffffff;
+  -webkit-text-stroke: 1.2px #8a6d23;
+  text-shadow:
+    1.5px 1.5px 0 #8a6d23,
+    3px 3px 0 #5c4718;
+}
+
+/* #01 / #02 / ... column headers, in place of the old broker logos. */
+.header-account {
+  color: rgba(245, 239, 224, 0.92);
+  letter-spacing: 2px;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.7);
+}
+
+.stop-cell {
+  font-family: var(--ui-font);
+  font-weight: 700;
+  font-size: calc(34px * var(--font-scale));
+  color: var(--white-glow);
+  -webkit-text-stroke: 1.5px #8a6d23;
+  text-shadow:
+    2px 2px 0 #8a6d23,
+    4px 4px 0 #5c4718;
+}
+
+/* Every account column, whether it prints whole contracts or decimal lots.
+   The decimals are what distinguishes them, not the font or the colour. */
+.value-cell {
+  font-family: var(--ui-font);
+  font-weight: 400;
+  font-size: calc(30px * var(--font-scale));
+  color: var(--gold);
+}
+
+/* Multiples of 10 are marked on the stop digit only — the account columns stay
+   gold, so the accent reads as a scale marker rather than a whole hot row.
+   The grid is flat (no row element), so `row-highlight` lands on the cell
+   itself: this must be a compound selector, not a descendant one. */
+.stop-cell.row-highlight {
+  color: var(--pink);
+  -webkit-text-stroke: 1.5px var(--pink-stroke);
+  text-shadow:
+    2px 2px 0 var(--pink-stroke),
+    4px 4px 0 var(--pink-deep);
+}
+
+/* ---------- Status strip ---------- */
+
+#status {
+  position: absolute;
+  bottom: 16px;
+  left: 0;
+  width: 100%;
+  text-align: center;
+  font-family: var(--ui-font);
+  font-weight: 400;
+  font-size: 21px;
+  letter-spacing: 2px;
+  color: rgba(240, 194, 94, 0.6);
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.8);
+  pointer-events: none;
+}
+
+/* ---------- Settings modal ---------- */
+
+#settings-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+#settings-overlay.hidden {
+  display: none;
+}
+
+#settings-panel {
+  width: min(560px, 94vw);
+  max-height: 88vh;
+  overflow-y: auto;
+  background: #14141c;
+  border: 1px solid rgba(240, 194, 94, 0.35);
+  border-radius: 10px;
+  color: #eee;
+  font-family: var(--ui-font);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+}
+
+.settings-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.settings-header h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.settings-header button {
+  background: none;
+  border: none;
+  color: #ccc;
+  font-size: 22px;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.settings-body {
+  padding: 6px 18px 18px;
+}
+
+.settings-body section {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.settings-body section:first-child {
+  border-top: none;
+  margin-top: 6px;
+  padding-top: 0;
+}
+
+.settings-body h3 {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 0 0 8px;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--gold);
+  font-weight: 600;
+}
+
+.settings-body label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  color: #bbb;
+  margin-bottom: 8px;
+}
+
+.settings-body label.checkbox {
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.settings-body input[type="text"],
+.settings-body input[type="number"],
+.settings-body select {
+  font-family: inherit;
+  font-size: 14px;
+  padding: 6px 8px;
+  border-radius: 5px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: #1f1f2a;
+  color: #f2f2f2;
+  min-width: 0;
+}
+
+.inline-fields {
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.inline-fields label {
+  flex: 1;
+  min-width: 90px;
+}
+
+.rate-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto 1fr;
+  gap: 10px;
+  align-items: end;
+}
+
+.rate-row .checkbox,
+.rate-row .hint {
+  padding-bottom: 8px;
+}
+
+.hint {
+  font-size: 11px;
+  color: #888;
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 400;
+}
+
+button#eurusd-fetch-now,
+button#usdjpy-fetch-now,
+#settings-save,
+.secondary-btn {
+  font-family: inherit;
+  font-size: 13px;
+  padding: 7px 14px;
+  border-radius: 6px;
+  border: 1px solid rgba(240, 194, 94, 0.5);
+  background: rgba(240, 194, 94, 0.12);
+  color: var(--gold);
+  cursor: pointer;
+  margin-bottom: 8px;
+}
+
+button#eurusd-fetch-now:hover:not(:disabled),
+button#usdjpy-fetch-now:hover:not(:disabled),
+#settings-save:hover,
+.secondary-btn:hover:not(:disabled) {
+  background: rgba(240, 194, 94, 0.28);
+}
+
+.secondary-btn:disabled,
+button#eurusd-fetch-now:disabled,
+button#usdjpy-fetch-now:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+/* ---------- Account rows ---------- */
+
+.account-row {
+  padding: 10px 0;
+  border-bottom: 1px dashed rgba(255, 255, 255, 0.08);
+}
+
+.account-row-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.acc-tag {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  color: var(--gold);
+}
+
+.acc-remove {
+  background: none;
+  border: none;
+  color: #999;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 4px;
+}
+
+.acc-remove:hover:not(:disabled) {
+  color: var(--warn);
+}
+
+.acc-remove:disabled {
+  opacity: 0.25;
+  cursor: default;
+}
+
+.account-row-fields {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.settings-footer {
+  padding: 14px 18px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  justify-content: flex-end;
+}

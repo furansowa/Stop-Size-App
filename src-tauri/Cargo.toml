@@ -1,0 +1,39 @@
+[package]
+name = "stop-size-app"
+version = "0.2.0"
+description = "Stop Size Widget"
+authors = ["furansowa"]
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+# The `_lib` suffix may seem redundant but it is necessary
+# to make the lib name unique and wouldn't conflict with the bin name.
+# This seems to be only an issue on Windows, see https://github.com/rust-lang/cargo/issues/8519
+name = "stop_size_app_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+# The package keeps Rust's kebab-case convention, but the shipped binary is
+# named to match `productName` in tauri.conf.json, so the exe, the installer
+# and the %APPDATA% config folder all agree.
+[[bin]]
+name = "StopSizeWidget"
+path = "src/main.rs"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = ["tray-icon"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+tokio = { version = "1", features = ["time"] }
+chrono = { version = "0.4", default-features = false, features = ["clock"] }
+
+[profile.release]
+opt-level = "s"
+lto = true
+codegen-units = 1
+strip = true
